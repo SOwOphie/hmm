@@ -46,7 +46,7 @@ local modcache = {}
 local mt = {__index = {}}
 
 function mt.__index:error(fmt, ...)
-	util.error("\nWhile processing %q (%s)\nAn error occured: %s", self.name, self.url, fmt:format(s))
+	util.error("\nWhile processing %q (%s)\nAn error occured: %s", self.name, self.url, fmt:format(...))
 end
 
 local propmap = {
@@ -60,7 +60,7 @@ local propmap = {
 
 function mt:__call(info)
 	for k, v in pairs(info) do
-		if not propmap[k] then self:error("unknown property: %s", tostring(k)) end
+		if not propmap[k] then self:error("unknown property: %s = %s", tostring(k), tostring(v)) end
 		self[k] = v
 	end
 	return self
@@ -130,7 +130,7 @@ function mt.__index:datadir()
 
 		for _, v in ipairs(self:downloads()) do
 			util.log("Extract %s/%d/%s", self.game, self.id, (v:match("%d+%.%w+$")))
-			assert(util.exec("7z x -o%s %s >/dev/null", path, v))
+			assert(util.exec("7z x -y -o%s %s >/dev/null", path, v))
 		end
 	end
 

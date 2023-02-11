@@ -35,6 +35,4 @@ function util.error(fmt, ...)
 	os.exit(1)
 end
 
-util.error = error
-
 return util
