@@ -68,15 +68,15 @@ function base.modmt.__index:getdeps()
 	return {}
 end
 
-function base.modmt.__index:download(url, path)
+function base.modmt.__index.download(url, path)
 	assert(util.exec("wget --quiet --output-document=%s %s", path, url))
 end
 
-function base.modmt.__index:unpack(src, dst)
+function base.modmt.__index.unpack(src, dst)
 	base.unpack(src, dst)
 end
 
-function base.modmt.__index:install(src, dst)
+function base.modmt.__index.install(src, dst)
 	assert(util.exec("rsync --quiet --archive %s/ %s", src, dst))
 end
 
@@ -140,7 +140,7 @@ function base.modmt.__index:do_download()
 	for _, f in ipairs(self:getfiles()) do
 		self:cached({}, f.id .. ".downloaded", self.redownload, function()
 			util.action("Download", f.filename)
-			self:download(type(f.url) == "function" and f.url() or f.url, self:downloadpath(f.filename))
+			self.download(type(f.url) == "function" and f.url() or f.url, self:downloadpath(f.filename))
 		end)
 	end
 end
@@ -153,7 +153,7 @@ function base.modmt.__index:do_unpack()
 			util.exec('rm -r %s 2>/dev/null', dst)
 			assert(util.exec('mkdir -p %s', dst))
 			util.action("Unpack", f.filename)
-			self:unpack(src, dst)
+			self.unpack(src, dst)
 		end)
 	end
 end
@@ -170,7 +170,7 @@ function base.modmt.__index:do_install()
 		assert(util.exec("mkdir -p %s", dst))
 		for _, f in ipairs(self:getfiles()) do
 			util.action("Install", f.filename)
-			self:install(self:unpackpath(f.filename), dst)
+			self.install(self:unpackpath(f.filename), dst)
 		end
 	end)
 end
