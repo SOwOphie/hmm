@@ -85,7 +85,7 @@ function base.modmt.__index:unpack()
 			util.exec('rm -r %s 2>/dev/null', dst)
 			assert(util.exec('mkdir -p %s', dst))
 			util.log("Unpack %s", f.filename)
-			base.unpack(src, dir)
+			base.unpack(src, dst)
 		end
 	end
 end
