@@ -170,7 +170,7 @@ function nexus.modmt.__index:getdeps()
 		end
 	end
 	for l in io.lines(path_) do
-		local skip = (self.ignoredeps == true) or (type(self.ignoredeps) == "table" and self.ignoredels[l])
+		local skip = (self.ignoredeps == true) or (type(self.ignoredeps) == "table" and self.ignoredeps[l])
 		if not skip then
 			for _, v in ipairs(ret) do
 				if v.url == l then util.warn("Duplicate dependency: %s ==> %s", self.url, l) end
