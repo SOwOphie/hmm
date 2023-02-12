@@ -20,6 +20,14 @@ function util.log(fmt, ...)
 	log:flush()
 end
 
+function util.begin(s)
+	util.log("\n\x1b[34m%s\x1b[0m ...", s)
+end
+
+function util.done(s)
+	util.log("\x1b[32m%s\x1b[0m", "Done")
+end
+
 function util.warn(fmt, ...)
 	log:write("\x1b[33mwarning\x1b[0m: ", fmt:format(...), "\n")
 	log:flush()
@@ -33,6 +41,16 @@ end
 function util.error(fmt, ...)
 	if fmt then util.errmsg(fmt, ...) end
 	os.exit(1)
+end
+
+function util.toset(t)
+	local ret = {}
+	for _, v in ipairs(t) do ret[v] = true end
+	return ret
+end
+
+function util.extsplit(p)
+	return p:match("^(.+)%.([^/]+)$")
 end
 
 return util
