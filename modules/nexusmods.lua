@@ -16,7 +16,7 @@ local function api(path, validity, fmt, ...)
 	if not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, validity) then
 		if not nexus.apikey then util.error("nexus.apikey required") end
 		local url = ("https://%s/" .. fmt):format(apidomain, ...)
-		util.log("Query %s", url)
+		util.action("Query", url)
 		local cmd = table.concat({"curl",
 			"--silent",
 			"--request", "GET",
@@ -81,7 +81,7 @@ function nexus.modmt.__index:userkeys()
 	local ret = base.modmt.__index.userkeys(self)
 	ret.deps = true
 	ret.files = true
-	ret.ignoredeps = util.toset
+	ret.ignoredeps = function(x) return type(x) == "table" and util.toset(x) or x end
 	return ret
 end
 
@@ -170,7 +170,8 @@ function nexus.modmt.__index:getdeps()
 		end
 	end
 	for l in io.lines(path_) do
-		if not (self.ignoredeps or {})[l] then
+		local skip = (self.ignoredeps == true) or (type(self.ignoredeps) == "table" and self.ignoredels[l])
+		if not skip then
 			for _, v in ipairs(ret) do
 				if v.url == l then util.warn("Duplicate dependency: %s ==> %s", self.url, l) end
 			end

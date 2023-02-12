@@ -56,6 +56,10 @@ function base.modmt.__index:userkeys()
 		reunpack = true,
 		reinstall = true,
 		collisions = util.toset,
+		download = true,
+		unpack = true,
+		prepare = true,
+		install = true,
 	}
 end
 
@@ -64,48 +68,16 @@ function base.modmt.__index:getdeps()
 	return {}
 end
 
--- Default implementation for the download phase. Only redownloads if prompted.
-function base.modmt.__index:download()
-	assert(util.exec('mkdir -p %s', self:downloadpath()))
-	for _, f in ipairs(self:getfiles()) do
-		local path = self:downloadpath(f.filename)
-		if self.redownload or not util.exec("find %s -type f >/dev/null 2>&1", path) then
-			util.log("Download %s", f.filename)
-			assert(util.exec("wget --quiet --output-document=%s %s", path, type(f.url) == "function" and f.url() or f.url))
-		end
-	end
+function base.modmt.__index:download(url, path)
+	assert(util.exec("wget --quiet --output-document=%s %s", path, url))
 end
 
--- Default implementation for the unpack phase. Only reunpacks if prompted.
-function base.modmt.__index:unpack()
-	for _, f in ipairs(self:getfiles()) do
-		local src = self:downloadpath(f.filename)
-		local dst = self:unpackpath(f.filename)
-		if self.reunpack or not util.exec("find %s -type d >/dev/null 2>&1", dst) then
-			util.exec('rm -r %s 2>/dev/null', dst)
-			assert(util.exec('mkdir -p %s', dst))
-			util.log("Unpack %s", f.filename)
-			base.unpack(src, dst)
-		end
-	end
+function base.modmt.__index:unpack(src, dst)
+	base.unpack(src, dst)
 end
 
--- Default implementation for the prepare phase, does nothing.
-function base.modmt.__index:prepare()
-end
-
--- Default implementation for the install phase, copies files from all the
--- unpacked directories into the root of the install directory.
-function base.modmt.__index:install()
-	local dst = self:installpath()
-	if self.reinstall or not util.exec("find %s -type d >/dev/null 2>&1", dst) then
-		util.exec("rm -r %s 2>/dev/null", dst)
-		assert(util.exec("mkdir -p %s", dst))
-		for _, f in ipairs(self:getfiles()) do
-			util.log("Install %s", f.filename)
-			assert(util.exec("rsync --quiet --archive %s/ %s", self:unpackpath(f.filename), dst))
-		end
-	end
+function base.modmt.__index:install(src, dst)
+	assert(util.exec("rsync --quiet --archive %s/ %s", src, dst))
 end
 
 --  Interface Functions  -----------------------------------------------------------------------------------------------
@@ -132,10 +104,75 @@ function base.modmt.__index:unpackpath(filename)
 	end
 end
 
+function base.modmt.__index:installname()
+	local ret = "with"
+	for _, f in ipairs(self:getfiles()) do ret = ret .. "-" .. f.id end
+	return ret
+end
+
 function base.modmt.__index:installpath()
-	local base = "with"
-	for _, f in ipairs(self:getfiles()) do base = base .. "-" .. f.id end
-	return self.path .. "/install/" .. base
+	return self.path .. "/install/" .. self:installname()
+end
+
+function base.modmt.__index:cached(prev, marker, override, fn)
+	local run = override
+
+	if not run and not util.exec("find %s/completed/%s -type f >/dev/null 2>&1", self.path, marker) then
+		run = true
+	end
+
+	for _, v in ipairs(prev) do
+		if not run and not util.exec("test %s/completed/%s -ot %s/completed/%s >/dev/null 2>&1", self.path, v, self.path, marker) then
+			run = true
+			break
+		end
+	end
+
+	if run then
+		fn()
+		util.exec("mkdir -p %s/completed", self.path)
+		util.exec("touch %s/completed/%s", self.path, marker)
+	end
+end
+
+function base.modmt.__index:do_download()
+	assert(util.exec('mkdir -p %s', self:downloadpath()))
+	for _, f in ipairs(self:getfiles()) do
+		self:cached({}, f.id .. ".downloaded", self.redownload, function()
+			util.action("Download", f.filename)
+			self:download(type(f.url) == "function" and f.url() or f.url, self:downloadpath(f.filename))
+		end)
+	end
+end
+
+function base.modmt.__index:do_unpack()
+	for _, f in ipairs(self:getfiles()) do
+		self:cached({f.id .. ".downloaded"}, f.id .. ".unpacked", self.reunpack, function()
+			local src = self:downloadpath(f.filename)
+			local dst = self:unpackpath(f.filename)
+			util.exec('rm -r %s 2>/dev/null', dst)
+			assert(util.exec('mkdir -p %s', dst))
+			util.action("Unpack", f.filename)
+			self:unpack(src, dst)
+		end)
+	end
+end
+
+function base.modmt.__index:do_install()
+	local triggers = {}
+	for _, f in ipairs(self:getfiles()) do
+		table.insert(triggers, f.id .. ".unpacked")
+	end
+
+	self:cached(triggers, self:installname() .. ".installed", self.reinstall, function()
+		local dst = self:installpath()
+		util.exec("rm -r %s 2>/dev/null", dst)
+		assert(util.exec("mkdir -p %s", dst))
+		for _, f in ipairs(self:getfiles()) do
+			util.action("Install", f.filename)
+			self:install(self:unpackpath(f.filename), dst)
+		end
+	end)
 end
 
 --  Utility Functions    -----------------------------------------------------------------------------------------------

@@ -20,8 +20,16 @@ function util.log(fmt, ...)
 	log:flush()
 end
 
+function util.action(what, arg)
+	util.log("\x1b[36m%s\x1b[0m%s", what, arg and (" " .. arg) or "")
+end
+
 function util.begin(s)
-	util.log("\n\x1b[34m%s\x1b[0m ...", s)
+	util.log("\n\x1b[35m%s\x1b[0m ...", s)
+end
+
+function util.step(s)
+	util.log("\x1b[34m%s\x1b[0m", s)
 end
 
 function util.done(s)

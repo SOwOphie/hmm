@@ -5,7 +5,7 @@ if #arg ~= 1 then
 	os.exit(1)
 end
 
-local util = require "hmm.util"
+util = require "hmm.util"
 
 local mods = {}
 
@@ -67,11 +67,10 @@ for i, m in ipairs(loadorder) do util.log(" %4d  %s", i, m.name) end
 
 util.begin "Processing mods"
 for _, m in ipairs(loadorder) do
-	util.log(m.name)
-	m:download()
-	m:unpack()
-	m:prepare()
-	m:install()
+	util.step(m.name)
+	m:do_download()
+	m:do_unpack()
+	m:do_install()
 end
 util.done()
 
@@ -92,7 +91,7 @@ util.begin "Deploying mods"
 util.log("Target directory: %s", gamedir)
 local ho = io.open(gamedir .. "/hmm", "a")
 for _, m in ipairs(loadorder) do
-	util.log(m.name)
+	util.step(m.name)
 	local d = m:installpath()
 
 	local hi = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))
