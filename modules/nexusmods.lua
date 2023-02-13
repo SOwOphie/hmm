@@ -12,8 +12,8 @@ local webdomain = "www." .. domain
 
 nexus.apikey = false
 
-local function api(path, validity, fmt, ...)
-	if not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, validity) then
+function nexus.api(path, validity, fmt, ...)
+	if not validity or not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, validity) then
 		if not nexus.apikey then util.error("nexus.apikey required") end
 		local url = ("https://%s/" .. fmt):format(apidomain, ...)
 		util.action("Query", url)
@@ -28,7 +28,16 @@ local function api(path, validity, fmt, ...)
 		}, " ")
 		assert(os.execute(cmd))
 	end
-	return json.decode(assert(io.open(path, "r")):read("a"))
+	local h <close> = assert(io.open(path, "r"))
+	return json.decode(h:read("a"))
+end
+
+function nexus.ispremium()
+	if nexus.premium == nil then
+		local resp = nexus.api(("%s/api/nexus/%s.json"):format(cachedir, nexus.apikey), 23 * 60, "v1/users/validate.json")
+		nexus.premium = resp.is_premium
+	end
+	return not not nexus.premium
 end
 
 --  Games  =============================================================================================================
@@ -39,7 +48,7 @@ function nexus.game(name)
 	local self = {}
 
 	self.name = name
-	self._info = api(("%s/api/nexus/%s/info.json"):format(cachedir, name), 30 * 24 * 60, "v1/games/%s.json", name)
+	self._info = nexus.api(("%s/api/nexus/%s/info.json"):format(cachedir, name), 30 * 24 * 60, "v1/games/%s.json", name)
 
 	self.id = self._info.id
 	self.displayname = self._info.name
@@ -97,8 +106,8 @@ end
 
 function nexus.modmt.__index:resolve()
 	if not self._resolved then
-		self._info  = api(self.apipath .. "/info.json" , 23 * 60, "v1/games/%s/mods/%s.json"      , self.game, self.id)
-		self._files = api(self.apipath .. "/files.json", 23 * 60, "v1/games/%s/mods/%s/files.json", self.game, self.id)
+		self._info  = nexus.api(self.apipath .. "/info.json" , 23 * 60, "v1/games/%s/mods/%s.json"      , self.game, self.id)
+		self._files = nexus.api(self.apipath .. "/files.json", 23 * 60, "v1/games/%s/mods/%s/files.json", self.game, self.id)
 
 		self.name = self._info.name
 
@@ -140,12 +149,23 @@ function nexus.modmt.__index:getfiles()
 				f.id       = ("%d"):format(fileid)
 				f.filename = f.id .. "." .. ext
 				f.url      = function()
-					return api(self.apipath .. "/download/" .. f.id .. ".json", 1,
-						"v1/games/%s/mods/%s/files/%s/download_link.json",
-						self.game,
-						self.id,
-						f.id
-					)[1].URI
+					if nexus.ispremium() then
+						return nexus.api(self.apipath .. "/download/" .. f.id .. ".json", 1,
+							"v1/games/%s/mods/%s/files/%s/download_link.json",
+							self.game,
+							self.id,
+							f.id
+						)[1].URI
+					else
+						local url = ("https://%s/Core/Libs/Common/Widgets/DownloadPopUp?id=%s&nmm=1&game_id=%s"):format(
+							webdomain,
+							f.id,
+							game.id
+						)
+						util.exec("xdg-open %s", url)
+						util.log("\nDownload link: %s", url)
+						util.error "Non-premium users cannot download mods without the website. Please click the download button in the new browser window."
+					end
 				end
 				break
 			end

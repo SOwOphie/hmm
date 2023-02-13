@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Terminal=false
+Categories=Network;
+Comment=hmm nexus download handler
+Exec=hmm-nxm '%u'
+Name=hmm-nxm
+Comment=
+Icon=
+MimeType=x-scheme-handler/nxm;

@@ -35,6 +35,8 @@ dofile(arg[1])
 
 if not gamedir then util.err("gamedir not provided") end
 
+assert(util.exec("realpath %s > /tmp/hmm.lastrun", arg[1]))
+
 local indent = 0
 local loadorder = {}
 local function addmod(m)
@@ -96,12 +98,12 @@ end
 
 util.begin "Deploying mods"
 util.log("Target directory: %s", gamedir)
-local ho = io.open(gamedir .. "/hmm", "a")
+local ho <close> = io.open(gamedir .. "/hmm", "a")
 for _, m in ipairs(loadorder) do
 	util.step(m.name)
 	local d = m:installpath()
 
-	local hi = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))
+	local hi <close> = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))
 	local files = {}
 	for l in hi:lines() do
 		if util.exec("find %s/%s -type f >/dev/null 2>&1", gamedir, l) and not (m.collisions or {})[l] then
@@ -109,9 +111,7 @@ for _, m in ipairs(loadorder) do
 		end
 		ho:write(l, "\n")
 	end
-	hi:close()
 
 	assert(util.exec("rsync --quiet --archive %s/ %s", d, gamedir))
 end
-ho:close()
 util.done()
