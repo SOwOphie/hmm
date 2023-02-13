@@ -33,6 +33,9 @@ The URL should be the one to the mod's main page, i.e. have the form `https://ww
 
 ### Dependencies
 
+Dependencies of a mod are mods that are required by that mod to work.
+`hmm` makes sure dependencies are always loaded before any mod that needs them.
+
 Dependency information is currently scraped from the mod page.
 This is cumbersome, prone to breakage on minor changes, and inaccurate, but we currently don't have a better way.
 Vortex uses a special modmeta-db server for this kind of information, but alas, we don't currently have access to that.
@@ -92,3 +95,72 @@ This process needs to be repeated once for each file to download.
 
 The premium status of a user is automatically determined via the API, but can be overridden by setting `nexus.premium = true/false`.
 Note that the restrictions on free users are enforced by the Nexusmods API, not `hmm`, so setting `nexus.premium = true` on a free account does not lead to happiness.
+
+## Example file
+
+```lua
+gamedir = "/home/boonami/.local/share/Steam/steamapps/common/Cyberpunk 2077"
+
+nexus.apikey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+nexus.game "cyberpunk2077"
+
+-- We do not want cybercmd installed because cmd is smelly windows software.
+nexus.block "https://www.nexusmods.com/cyberpunk2077/mods/5176"
+
+-- Metro System is simple enough to install.
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/3560"
+
+-- Cyberarms come in two variants, we need to select one of them.
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/5295" {
+	files = {32354},
+}
+
+-- All Vanilla Clothes Atelier Store, because we want to be fashionable as soon as possible ...
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/5544" {
+
+	-- ... but we do not want big booba, which is listed as an optional dependency.
+	ignoredeps = {
+		"https://www.nexusmods.com/cyberpunk2077/mods/5408",
+	},
+
+}
+
+-- Hyst's Store has a nice dress, but also pulls in a lot of rather skimpy mods ...
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/6015" {
+
+	-- ... which we do not want ...
+	ignoredeps = true,
+
+	-- ... but we need to add back redscript and Virtual Atelier, or otherwise it won't work ...
+	deps = {
+		"https://www.nexusmods.com/cyberpunk2077/mods/1511",
+		"https://www.nexusmods.com/cyberpunk2077/mods/2987",
+	},
+
+}
+
+-- ... aand here is the dress we wanted.
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/6238"
+
+-- This early mod was not packaged with mod installers in mind, and has one
+-- archive with many variants. We select the ones we like most using a custom
+-- install function, and set `reinstall = true` so that changes in that function
+-- are picked up immediately.
+nexus.mod "https://www.nexusmods.com/cyberpunk2077/mods/2792" {
+	files = {24273},
+	reinstall = true,
+	install = function(src, dst)
+		local dst_ = dst .. "/archive/pc/mod"
+		assert(util.exec("mkdir -p %s", dst_))
+		local files = {
+			"Chrome Heels/Jinguji_FleetsToChromeHeels.archive",
+			"Corset Top/Jinguji_BikerJacketToCorsetBlackGold.archive",
+		}
+		for _, f in ipairs(files) do
+			assert(util.exec("cp %s %s", src .. "/JingujiAllInOne/" .. f, dst_))
+		end
+	end,
+}
+
+```
