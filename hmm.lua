@@ -35,15 +35,22 @@ dofile(arg[1])
 
 if not gamedir then util.err("gamedir not provided") end
 
+local indent = 0
 local loadorder = {}
 local function addmod(m)
+	util.log("%s%s", ("  "):rep(indent), m.url)
+
 	for _, v in ipairs(loadorder) do
 		if v.id == m.id then return end
 	end
 
 	m:resolve()
-	util.log("%s ==> %s", m.url, m.name)
-	for _, dep in ipairs(m:getdeps()) do addmod(dep) end
+	indent = indent + 1
+	for _, dep in ipairs(m:getdeps()) do
+		-- util.log("%s%s ==> %s", dep.url)
+		addmod(dep)
+	end
+	indent = indent - 1
 	table.insert(loadorder, m)
 end
 for _, m in ipairs(mods) do addmod(m) end
@@ -55,13 +62,13 @@ util.log "\nDependencies:"
 for _, m in ipairs(loadorder) do
 	local deps = m:getdeps()
 	if deps[1] then
-		util.log(" - %s", m.name)
-		for _, d in ipairs(deps) do util.log("     ==> %s", d.name) end
+		util.log(" - %q (%s)", m.name, m.url)
+		for _, d in ipairs(deps) do util.log("     ==> %q (%s)", d.name, d.url) end
 	end
 end
 
 util.log "\nLoad order:"
-for i, m in ipairs(loadorder) do util.log(" %4d  %s", i, m.name) end
+for i, m in ipairs(loadorder) do util.log(" %4d  %q (%s)", i, m.name, m.url) end
 
 
 

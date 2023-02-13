@@ -55,7 +55,17 @@ nexus.modmt.__call = base.modmt.__call
 
 local cache = {}
 
+local blocked = {}
+
+function nexus.block(url)
+	blocked[url] = true
+end
+
 function nexus.mod(url)
+	if blocked[url] then
+		util.error("mod %s is blocked", url)
+	end
+
 	if not cache[url] then
 		local self = {}
 		self.game, self.id = url:match("^https://www.nexusmods.com/([^/]*)/mods/([0-9]*)$")
