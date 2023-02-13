@@ -58,7 +58,6 @@ function base.modmt.__index:userkeys()
 		collisions = util.toset,
 		download = true,
 		unpack = true,
-		prepare = true,
 		install = true,
 	}
 end
