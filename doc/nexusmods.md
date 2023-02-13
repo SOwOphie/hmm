@@ -79,3 +79,16 @@ nexus.block "<url>"
 
 This statement must be placed above all `nexus.mod` declarations to have any effect.
 If something tries to install the blocked mod, an error message is printed instead, and the installation is aborted.
+
+## Free / Premium account features and `nxm:` link integration
+
+Only premium account users can download files automatically, free users have to go through the website for each file.
+`hmm` aims to make this process as seamless as possible, but some friction still remains.
+
+When `hmm` needs to download a file with a free account, it aborts with an error and opens the download website for you.
+You need to click on the big yellow "Download" button, and `hmm` will use the information provided by the link to download that file.
+On the next run, `hmm` will pick up the downloaded file and continue.
+This process needs to be repeated once for each file to download.
+
+The premium status of a user is automatically determined via the API, but can be overridden by setting `nexus.premium = true/false`.
+Note that the restrictions on free users are enforced by the Nexusmods API, not `hmm`, so setting `nexus.premium = true` on a free account does not lead to happiness.
