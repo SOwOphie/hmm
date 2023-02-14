@@ -13,9 +13,65 @@ end
 
 base.archivemap = {}
 
-base.archivemap["7z"] = function(archive, target) assert(util.exec("7z x -y -o%s %s >/dev/null", target, archive)) end
-base.archivemap.rar   = function(archive, target) assert(util.exec("unrar x -y %s %s >/dev/null", archive, target)) end
-base.archivemap.zip   = base.archivemap["7z"]
+if util.exec("unar -version >/dev/null 2>&1") then
+	local f = function(archive, target)
+		assert(util.exec("unar -quiet -force-overwrite -no-directory %s -output-directory %s", archive, target))
+	end
+
+	if not base.archivemap["7z"] then
+		util.log("Extracting .7z archives using unar")
+		base.archivemap["7z"] = f
+	end
+
+	if not base.archivemap["rar"] and util.exec("7z i | grep -Fq Rar.so") then
+		util.log("Extracting .rar archives using unar")
+		base.archivemap["rar"] = f
+	end
+
+	if not base.archivemap["zip"] then
+		util.log("Extracting .zip archives using unar")
+		base.archivemap["zip"] = f
+	end
+end
+
+if util.exec("7z i >/dev/null 2>&1") then
+	local f = function(archive, target)
+		assert(util.exec("7z x -y -o%s %s >/dev/null", target, archive))
+	end
+
+	if not base.archivemap["7z"] then
+		util.log("Extracting .7z archives using p7zip")
+		base.archivemap["7z"] = f
+	end
+
+	if not base.archivemap["rar"] and util.exec("7z i | grep -Fq Rar.so") then
+		util.log("Extracting .rar archives using p7zip")
+		base.archivemap["rar"] = f
+	end
+
+	if not base.archivemap["zip"] then
+		util.log("Extracting .zip archives using p7zip")
+		base.archivemap["zip"] = f
+	end
+end
+
+if not base.archivemap["rar"] and util.exec("unrar >/dev/null 2>&1") then
+	util.log("Extracting .rar archives using unrar")
+	base.archivemap["rar"] = function(archive, target)
+		assert(util.exec("unrar x -y %s %s >/dev/null", archive, target))
+	end
+end
+
+if not base.archivemap["zip"] and util.exec("unzip -v >/dev/null 2>&1") then
+	util.log("Extracting .zip archives using unzip")
+	base.archivemap["zip"] = function(archive, target)
+		assert(util.exec("unzip %s -d %s", archive, target))
+	end
+end
+
+if not base.archivemap["7z" ] then util.warn "found no program to unpack .7z archives, supported are: 7z (from p7zip)" end
+if not base.archivemap["rar"] then util.warn "found no program to unpack .rar archives, supported are: 7z (from p7zip), unrar" end
+if not base.archivemap["zip"] then util.warn "found no program to unpack .zip archives, supported are: 7z (from p7zip), unzip" end
 
 --  Mod Base Implementation  ===========================================================================================
 

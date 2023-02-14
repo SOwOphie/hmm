@@ -20,14 +20,17 @@ You have been warned!
 ### 1. Install requirements
 
 - Lua 5.4 (executable `lua5.4`)
-- curl (executable `curl`)
+- curl
 - libxml2 (executable `xmllint`)
-- p7zip (executable `7z`)
-- rsync (executable `rsync`)
-- unrar (executable `unrar`)
-- wget (executable `wget`)
+- rsync
+- wget
 - xdg-utils (executable `xdg-open`)
-- zenity (executable `zenity`)
+- zenity
+- Archive extraction tools for `.7z`, `.rar` and `.zip`, supported are:
+  - unar (extracts `.7z`, `.rar`, `.zip`)
+  - p7zip (executable `7z`, extracts `.7z`, `.zip`, and maybe `.rar`)
+  - unrar (extracts `.rar`)
+  - unzip (extracts `.zip`)
 
 ### 2. Library placement
 
