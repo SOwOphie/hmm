@@ -118,13 +118,13 @@ function nexus.modmt.__index:resolve()
 				if v.category_id == 1 then
 					if primary then
 						util.errmsg("%q (%s):\nmod consists of multiple files, please specify their IDs manually", self.name, self.url)
-						util.log("\nfound files:")
+						util.note("\nfound files:")
 						for _, f in ipairs(self._files.files) do
 							if f.category_id ~= 4 and f.category_id ~= 6 then
-								util.log("%s %d: %s", f.category_name, f.file_id, f.name)
+								util.note("%s %d: %s", f.category_name, f.file_id, f.name)
 							end
 						end
-						util.log("\nMore info on %s?tab=files\n", self.url)
+						util.note("\nMore info on %s?tab=files\n", self.url)
 						os.exit(1)
 					end
 					primary = v.file_id
@@ -133,6 +133,30 @@ function nexus.modmt.__index:resolve()
 			if not primary then self:error("no primary file found, please specify file IDs manually") end
 
 			self.files = {primary}
+		else
+			local function newest(self, id)
+				for _, v in ipairs(self._files.file_updates) do
+					if v.old_file_id == id then
+						return newest(self, v.new_file_id) or v.new_file_id
+					end
+				end
+			end
+
+			for _, f in ipairs(self.files) do
+				for _, v in ipairs(self._files.files) do
+					if f == v.file_id then
+						if v.category_id == 4 then
+							local new = newest(self, f)
+							util.warn("%s: file %d is outdated%s", self.url, f, new and (", try " .. new) or "")
+						end
+
+						if v.category_id == 6 then
+							local new = newest(self, f)
+							util.warn("%s: file %d is deleted" , self.url, f, new and (", try " .. new) or "")
+						end
+					end
+				end
+			end
 		end
 
 		self._resolved = true
@@ -164,7 +188,7 @@ function nexus.modmt.__index:getfiles()
 							game.id
 						)
 						util.exec("xdg-open %s", url)
-						util.log("\nDownload link: %s", url)
+						util.note("\nDownload link: %s", url)
 						util.error "Non-premium users cannot download mods without the website. Please click the download button in the new browser window."
 					end
 				end

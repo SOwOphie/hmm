@@ -1,5 +1,8 @@
 local util = {}
 
+local verbose = os.getenv("VERBOSE")
+verbose = verbose and verbose ~= ""
+
 local log = io.stderr
 -- local log = io.open("/tmp/hmm.log", "w")
 
@@ -16,28 +19,32 @@ function util.exec(fmt, ...)
 end
 
 function util.log(fmt, ...)
+	if verbose then util.note(fmt, ...) end
+end
+
+function util.note(fmt, ...)
 	log:write(fmt:format(...), "\n")
 	log:flush()
 end
 
 function util.action(what, arg)
-	util.log("\x1b[36m%s\x1b[0m%s", what, arg and (" " .. arg) or "")
+	util.note("\x1b[36m%s\x1b[0m%s", what, arg and (" " .. arg) or "")
 end
 
 function util.begin(s)
-	util.log("\n\x1b[35m%s\x1b[0m ...", s)
+	util.note("\n\x1b[35m%s\x1b[0m ...", s)
 end
 
 function util.step(s)
-	util.log("\x1b[34m%s\x1b[0m", s)
+	util.note("\x1b[34m%s\x1b[0m", s)
 end
 
 function util.done(s)
-	util.log("\x1b[32m%s\x1b[0m", "Done")
+	util.note("\x1b[32m%s\x1b[0m", "Done")
 end
 
 function util.warn(fmt, ...)
-	log:write("\x1b[33mwarning\x1b[0m: ", fmt:format(...), "\n")
+	log:write("\n\x1b[33mwarning\x1b[0m: ", fmt:format(...), "\n")
 	log:flush()
 end
 
