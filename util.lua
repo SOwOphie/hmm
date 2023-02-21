@@ -4,7 +4,21 @@ local verbose = os.getenv("VERBOSE")
 verbose = verbose and verbose ~= ""
 
 local log = io.stderr
--- local log = io.open("/tmp/hmm.log", "w")
+
+local trace = {}
+
+function util.trace_push(m)
+	table.insert(trace, m)
+end
+
+function util.trace_pop()
+	table.remove(trace)
+end
+
+function util.traceback()
+	util.note("")
+	for _, t in ipairs(trace) do util.note("\x1b[36mWhile processing\x1b[0m %q (%s):", t.name, t.url) end
+end
 
 function util.shellesc(s)
 	s = tostring(s)
@@ -44,12 +58,14 @@ function util.done(s)
 end
 
 function util.warn(fmt, ...)
-	log:write("\n\x1b[33mwarning\x1b[0m: ", fmt:format(...), "\n")
+	util.traceback()
+	log:write("\x1b[33mWarning\x1b[0m: ", fmt:format(...), "\n\n")
 	log:flush()
 end
 
 function util.errmsg(fmt, ...)
-	log:write("\n\x1b[31merror\x1b[0m: ", fmt:format(...), "\n")
+	util.traceback()
+	log:write("\x1b[31mError\x1b[0m: ", fmt:format(...), "\n\n")
 	log:flush()
 end
 

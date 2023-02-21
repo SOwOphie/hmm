@@ -37,22 +37,16 @@ if not gamedir then util.err("gamedir not provided") end
 
 assert(util.exec("realpath %s > /tmp/hmm.lastrun", arg[1]))
 
-local indent = 0
 local loadorder = {}
 local function addmod(m)
-	util.log("%s%s", ("  "):rep(indent), m.url)
-
 	for _, v in ipairs(loadorder) do
 		if v.id == m.id then return end
 	end
 
 	m:resolve()
-	indent = indent + 1
-	for _, dep in ipairs(m:getdeps()) do
-		-- util.log("%s%s ==> %s", dep.url)
-		addmod(dep)
-	end
-	indent = indent - 1
+	util.trace_push(m)
+	for _, dep in ipairs(m:getdeps()) do addmod(dep) end
+	util.trace_pop()
 	table.insert(loadorder, m)
 end
 for _, m in ipairs(mods) do addmod(m) end

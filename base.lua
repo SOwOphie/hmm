@@ -232,8 +232,12 @@ end
 
 --  Utility Functions    -----------------------------------------------------------------------------------------------
 
-function base.modmt.__index:error(...)
-	util.error("\nWhile processing %q (%s)\nAn error occured: %s", self.name, self.url, fmt:format(...))
+function base.modmt.__index:error(fmt, ...)
+	util.error("%q (%s): %s", self.name, self.url, fmt:format(...))
+end
+
+function base.modmt.__index:warn(fmt, ...)
+	util.warn("%q (%s): %s", self.name, self.url, fmt:format(...))
 end
 
 return base

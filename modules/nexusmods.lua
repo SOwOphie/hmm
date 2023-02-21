@@ -72,10 +72,6 @@ function nexus.block(url)
 end
 
 function nexus.mod(url)
-	if blocked[url] then
-		util.error("mod %s is blocked", url)
-	end
-
 	if not cache[url] then
 		local self = {}
 		self.game, self.id = url:match("^https://www.nexusmods.com/([^/]*)/mods/([0-9]*)$")
@@ -112,20 +108,25 @@ function nexus.modmt.__index:resolve()
 
 		self.name = self._info.name
 
+		if blocked[self.url] then self:error("mod is blocked") end
+
 		if not self.files then
 			local primary = false
 			for _, v in ipairs(self._files.files) do
 				if v.category_id == 1 then
 					if primary then
-						util.errmsg("%q (%s):\nmod consists of multiple files, please specify their IDs manually", self.name, self.url)
-						util.note("\nfound files:")
+						local lines = {}
+						table.insert(lines, "mod consists of multiple files, please specify their IDs manually")
+						table.insert(lines, "")
+						table.insert(lines, "found files:")
 						for _, f in ipairs(self._files.files) do
-							if f.category_id ~= 4 and f.category_id ~= 6 then
-								util.note("%s %d: %s", f.category_name, f.file_id, f.name)
+							if f.category_id ~= 4 and f.category_id ~= 6 and f.category_id ~= 7 then
+								table.insert(lines, ("%s %d: %s"):format(f.category_name, f.file_id, f.name))
 							end
 						end
-						util.note("\nMore info on %s?tab=files\n", self.url)
-						os.exit(1)
+						table.insert(lines, "")
+						table.insert(lines, ("More info on %s?tab=files"):format(self.url))
+						self:error("%s", table.concat(lines, "\n"))
 					end
 					primary = v.file_id
 				end
@@ -147,12 +148,17 @@ function nexus.modmt.__index:resolve()
 					if f == v.file_id then
 						if v.category_id == 4 then
 							local new = newest(self, f)
-							util.warn("%s: file %d is outdated%s", self.url, f, new and (", try " .. new) or "")
+							self:warn("file %d is outdated%s", f, new and (", try " .. new) or "")
 						end
 
 						if v.category_id == 6 then
 							local new = newest(self, f)
-							util.warn("%s: file %d is deleted" , self.url, f, new and (", try " .. new) or "")
+							self:warn("file %d is deleted" , f, new and (", try " .. new) or "")
+						end
+
+						if v.category_id == 7 then
+							local new = newest(self, f)
+							self:warn("file %d is archived" , f, new and (", try " .. new) or "")
 						end
 					end
 				end
