@@ -85,7 +85,7 @@ util.done()
 
 
 
-if util.exec("find %s/hmm -type f >/dev/null 2>&1", gamedir) then
+if util.exec('test -n "$(find %s/hmm -type f 2>/dev/null)"', gamedir) then
 	util.begin "Cleaning up previous deployment"
 	for l in io.lines(gamedir .. "/hmm") do
 		util.exec("cd %s && rm %s", gamedir, l)
@@ -106,7 +106,7 @@ for _, m in ipairs(loadorder) do
 	local hi <close> = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))
 	local files = {}
 	for l in hi:lines() do
-		if util.exec("find %s/%s -type f >/dev/null 2>&1", gamedir, l) and not (m.collisions or {})[l] then
+		if util.exec('test -n "$(find %s/%s -type f 2>/dev/null)"', gamedir, l) and not (m.collisions or {})[l] then
 			m:error("file %q collides, please allow explicitly to continue")
 		end
 		ho:write(l, "\n")

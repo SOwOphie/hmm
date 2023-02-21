@@ -13,7 +13,7 @@ local webdomain = "www." .. domain
 nexus.apikey = false
 
 function nexus.api(path, validity, fmt, ...)
-	if not validity or not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, validity) then
+	if not validity or not util.exec('test -n "$(find %s -type f -mmin -%s 2>/dev/null)"', path, validity) then
 		if not nexus.apikey then util.error("nexus.apikey required") end
 		local url = ("https://%s/" .. fmt):format(apidomain, ...)
 		util.action("Query", url)
@@ -120,7 +120,7 @@ function nexus.modmt.__index:resolve()
 						util.errmsg("%q (%s):\nmod consists of multiple files, please specify their IDs manually", self.name, self.url)
 						util.log("\nfound files:")
 						for _, f in ipairs(self._files.files) do
-							if f.category_id ~= 4 and f.category_id ~= 7 then
+							if f.category_id ~= 4 and f.category_id ~= 6 then
 								util.log("%s %d: %s", f.category_name, f.file_id, f.name)
 							end
 						end
@@ -183,7 +183,7 @@ function nexus.modmt.__index:getdeps()
 	local path = self.path .. "/deps/scraped.html"
 	local url = ("https://%s/Core/Libs/Common/Widgets/ModDescriptionTab?id=%d&game_id=%d"):format(webdomain, self.id, game.id)
 
-	if not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, 23 * 60) then
+	if not util.exec('test -n "$(find %s -type f -mmin -%s 2>/dev/null)"', path, 23 * 60) then
 		assert(util.exec("wget --quiet --output-document=%s %s", path, url))
 		assert(os.execute("sleep 1"))
 	end

@@ -172,7 +172,7 @@ end
 function base.modmt.__index:cached(prev, marker, override, fn)
 	local run = override
 
-	if not run and not util.exec("find %s/completed/%s -type f >/dev/null 2>&1", self.path, marker) then
+	if not run and not util.exec('test -n "$(find %s/completed/%s -type f 2>/dev/null)"', self.path, marker) then
 		run = true
 	end
 
