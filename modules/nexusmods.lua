@@ -27,6 +27,7 @@ function nexus.api(path, validity, fmt, ...)
 			util.shellesc(url)
 		}, " ")
 		assert(os.execute(cmd))
+		assert(os.execute("sleep 1"))
 	end
 	local h <close> = assert(io.open(path, "r"))
 	return json.decode(h:read("a"))
@@ -184,6 +185,7 @@ function nexus.modmt.__index:getdeps()
 
 	if not util.exec("find %s -type f -mmin -%s >/dev/null 2>&1", path, 23 * 60) then
 		assert(util.exec("wget --quiet --output-document=%s %s", path, url))
+		assert(os.execute("sleep 1"))
 	end
 
 	local path_ = self.path .. "/deps/list"
