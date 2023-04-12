@@ -81,7 +81,7 @@ function nexus.mod(url)
 		self.url  = url
 		self.name = "?"
 
-		self.path = cachedir .. "/mods/nexus/" .. self.id
+		self.path = cachedir .. "/mods/nexus/" .. self.game .. "/" .. self.id
 		self.apipath = self.path .. "/api"
 		setmetatable(self, nexus.modmt)
 
@@ -214,6 +214,7 @@ function nexus.modmt.__index:getdeps()
 	local url = ("https://%s/Core/Libs/Common/Widgets/ModDescriptionTab?id=%d&game_id=%d"):format(webdomain, self.id, game.id)
 
 	if not util.exec('test -n "$(find %s -type f -mmin -%s 2>/dev/null)"', path, 23 * 60) then
+		util.action("Query", url)
 		assert(util.exec("wget --quiet --output-document=%s %s", path, url))
 		assert(os.execute("sleep 1"))
 	end

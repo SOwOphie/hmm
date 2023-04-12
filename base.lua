@@ -124,6 +124,7 @@ function base.modmt.__index:getdeps()
 end
 
 function base.modmt.__index.download(url, path)
+	util.action("wget", url)
 	assert(util.exec("wget --quiet --output-document=%s %s", path, url))
 end
 
