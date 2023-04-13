@@ -7,6 +7,8 @@ end
 
 util = require "hmm.util"
 
+local base = require "hmm.base"
+
 local mods = {}
 cleanup = {}
 
@@ -27,6 +29,10 @@ local function monkeypatch(module)
 end
 
 nexus = monkeypatch(require "hmm.modules.nexusmods")
+
+
+
+copyfrom = base.modmt.__index.install
 
 
 
@@ -71,7 +77,7 @@ for i, m in ipairs(loadorder) do util.log(" %4d  %q (%s)", i, m.name, m.url) end
 
 util.begin "Processing mods"
 for _, m in ipairs(loadorder) do
-	util.step(m.name)
+	util.step(m.name, m.url)
 	m:do_download()
 	m:do_unpack()
 	m:do_install()
@@ -86,6 +92,7 @@ if util.exec('test -n "$(find %s/hmm -type f 2>/dev/null)"', gamedir) then
 		util.exec("cd %s && rm %s", gamedir, l)
 	end
 	util.exec("rm %s/hmm", gamedir)
+	util.exec("find %s -type d -empty -delete", gamedir)
 	util.done()
 end
 
@@ -95,7 +102,7 @@ util.begin "Deploying mods"
 util.log("Target directory: %s", gamedir)
 local ho <close> = io.open(gamedir .. "/hmm", "a")
 for _, m in ipairs(loadorder) do
-	util.step(m.name)
+	util.step(m.name, m.url)
 	local d = m:installpath()
 
 	local hi <close> = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))

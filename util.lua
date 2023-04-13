@@ -29,6 +29,7 @@ end
 function util.exec(fmt, ...)
 	local args = {...}
 	for i = 1, #args do args[i] = util.shellesc(args[i]) end
+	util.log("\x1b[36mutil.exec\x1b[0m %s", fmt:format(table.unpack(args)))
 	return os.execute(fmt:format(table.unpack(args)))
 end
 
@@ -49,8 +50,12 @@ function util.begin(s)
 	util.note("\n\x1b[35m%s\x1b[0m ...", s)
 end
 
-function util.step(s)
-	util.note("\x1b[34m%s\x1b[0m", s)
+function util.step(s, arg)
+	if arg then
+		util.note("\x1b[34m%s\x1b[0m %s", s, arg)
+	else
+		util.note("\x1b[34m%s\x1b[0m", s)
+	end
 end
 
 function util.done(s)

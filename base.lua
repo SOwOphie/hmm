@@ -133,6 +133,7 @@ function base.modmt.__index.unpack(src, dst)
 end
 
 function base.modmt.__index.install(src, dst)
+	assert(util.exec("mkdir -p %s", dst))
 	assert(util.exec("rsync --quiet --archive %s/ %s", src, dst))
 end
 
