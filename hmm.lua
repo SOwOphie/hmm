@@ -8,6 +8,7 @@ end
 util = require "hmm.util"
 
 local mods = {}
+cleanup = {}
 
 
 
@@ -109,3 +110,5 @@ for _, m in ipairs(loadorder) do
 	assert(util.exec("rsync --quiet --archive %s/ %s", d, gamedir))
 end
 util.done()
+
+for _, v in ipairs(cleanup) do v() end

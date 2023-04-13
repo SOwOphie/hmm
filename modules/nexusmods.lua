@@ -23,11 +23,23 @@ function nexus.api(path, validity, fmt, ...)
 			"--header", "'accept: application/json'",
 			"--header", ("'apikey: %s'"):format(nexus.apikey),
 			"--output", util.shellesc(path),
+			"--dump-header", "/tmp/nexusmods-headers",
 			"--create-dirs",
 			util.shellesc(url)
 		}, " ")
 		assert(os.execute(cmd))
-		assert(os.execute("sleep 1"))
+		assert(os.execute("sleep 0.1"))
+
+		local hdrs = io.open("/tmp/nexusmods-headers", "r"):read("a"):lower()
+		local hourly_remaining = hdrs:match("\nx%-rl%-hourly%-remaining: +(%d+)")
+		local hourly_reset     = hdrs:match("\nx%-rl%-hourly%-reset: +([^\n]+)")
+		local daily_remaining  = hdrs:match("\nx%-rl%-daily%-remaining: +(%d+)")
+		local daily_reset      = hdrs:match("\nx%-rl%-daily%-reset: +([^\n]+)")
+		if tonumber(hourly_remaining) == 0 then
+			util.error("hourly rate limit exceeded, please wait until %s", hourly_reset)
+		elseif tonumber(daily_remaining) == 0 then
+			util.error("daily rate limit exceeded, please wait until %s", daily_reset)
+		end
 	end
 	local h <close> = assert(io.open(path, "r"))
 	return json.decode(h:read("a"))
@@ -35,11 +47,27 @@ end
 
 function nexus.ispremium()
 	if nexus.premium == nil then
-		local resp = nexus.api(("%s/api/nexus/%s.json"):format(cachedir, nexus.apikey), 23 * 60, "v1/users/validate.json")
+		local resp = nexus.api(("%s/nexus/users/%s.json"):format(cachedir, nexus.apikey:gsub('/', '_')), 23 * 60, "v1/users/validate.json")
 		nexus.premium = resp.is_premium
 	end
 	return not not nexus.premium
 end
+
+table.insert(cleanup, function()
+	local h = io.open("/tmp/nexusmods-headers", "r")
+	if h then
+		local hdrs = h:read("a"):lower()
+		local hourly_limit     = hdrs:match("\nx%-rl%-hourly%-limit: +(%d+)")
+		local hourly_remaining = hdrs:match("\nx%-rl%-hourly%-remaining: +(%d+)")
+		local hourly_reset     = hdrs:match("\nx%-rl%-hourly%-reset: +([^\n]+)")
+		local daily_limit      = hdrs:match("\nx%-rl%-daily%-limit: +(%d+)")
+		local daily_remaining  = hdrs:match("\nx%-rl%-daily%-remaining: +(%d+)")
+		local daily_reset      = hdrs:match("\nx%-rl%-daily%-reset: +([^\n]+)")
+		util.note("\nNexusmods rate limit: %s/%s hourly, %s/%s daily requests remaining", hourly_remaining, hourly_limit, daily_remaining, daily_limit)
+		h:close()
+		os.execute("rm /tmp/nexusmods-headers >/dev/null 2>&1")
+	end
+end)
 
 --  Games  =============================================================================================================
 
@@ -49,7 +77,7 @@ function nexus.game(name)
 	local self = {}
 
 	self.name = name
-	self._info = nexus.api(("%s/api/nexus/%s/info.json"):format(cachedir, name), 30 * 24 * 60, "v1/games/%s.json", name)
+	self._info = nexus.api(("%s/nexus/games/%s/info.json"):format(cachedir, name), 30 * 24 * 60, "v1/games/%s.json", name)
 
 	self.id = self._info.id
 	self.displayname = self._info.name
@@ -81,7 +109,7 @@ function nexus.mod(url)
 		self.url  = url
 		self.name = "?"
 
-		self.path = cachedir .. "/mods/nexus/" .. self.game .. "/" .. self.id
+		self.path = cachedir .. "/nexus/mods/" .. self.game .. "/" .. self.id
 		self.apipath = self.path .. "/api"
 		setmetatable(self, nexus.modmt)
 
@@ -104,7 +132,7 @@ end
 function nexus.modmt.__index:resolve()
 	if not self._resolved then
 		self._info  = nexus.api(self.apipath .. "/info.json" , 23 * 60, "v1/games/%s/mods/%s.json"      , self.game, self.id)
-		self._files = nexus.api(self.apipath .. "/files.json", 23 * 60, "v1/games/%s/mods/%s/files.json", self.game, self.id)
+		self._files = nexus.api(self.apipath .. "/files.json",      60, "v1/games/%s/mods/%s/files.json", self.game, self.id)
 
 		self.name = self._info.name
 
@@ -216,7 +244,7 @@ function nexus.modmt.__index:getdeps()
 	if not util.exec('test -n "$(find %s -type f -mmin -%s 2>/dev/null)"', path, 23 * 60) then
 		util.action("Query", url)
 		assert(util.exec("wget --quiet --output-document=%s %s", path, url))
-		assert(os.execute("sleep 1"))
+		assert(os.execute("sleep 0.1"))
 	end
 
 	local path_ = self.path .. "/deps/list"
