@@ -44,7 +44,7 @@ stdenv.mkDerivation rec {
   '';
 
   postFixup = ''
-    PREFIX="${libxml2}/bin:${wget}/bin:${rsync}/bin:${curl}/bin:${unar}/bin:${xdg-utils}:${gnome.zenity}"
+    PREFIX="${libxml2}/bin:${wget}/bin:${rsync}/bin:${curl}/bin:${unar}/bin:${xdg-utils}/bin:${gnome.zenity}/bin"
 
     wrapProgram $out/bin/hmm \
       --set LUA_PATH ";;$out/share/lua/?.lua;$out/share/lua/?/init.lua" \
