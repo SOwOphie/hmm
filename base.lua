@@ -7,7 +7,7 @@ local util = require "hmm.util"
 function base.unpack(archive, target)
 	local _, ext = util.extsplit(archive)
 	local f = base.archivemap[ext]
-	if not f then util.error("cannot open arcive of type %s", ext) end
+	if not f then util.error("cannot open archive of type %s", ext) end
 	f(archive, target)
 end
 
