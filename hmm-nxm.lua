@@ -33,6 +33,7 @@ end
 
 cachedir = os.getenv("HOME") .. "/.local/share/hmm"
 gamedir  = false
+cleanup  = {}
 nexus    = require "hmm.modules.nexusmods"
 
 dofile(hmmfile)
