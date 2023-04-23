@@ -23,7 +23,7 @@ if util.exec("unar -version >/dev/null 2>&1") then
 		base.archivemap["7z"] = f
 	end
 
-	if not base.archivemap["rar"] and util.exec("7z i | grep -Fq Rar.so") then
+	if not base.archivemap["rar"] then
 		util.log("Extracting .rar archives using unar")
 		base.archivemap["rar"] = f
 	end
