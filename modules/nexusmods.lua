@@ -239,11 +239,11 @@ function nexus.modmt.__index:getdeps()
 	assert(util.exec("mkdir -p %s/deps", self.path))
 
 	local path = self.path .. "/deps/scraped.html"
-	local url = ("https://%s/Core/Libs/Common/Widgets/ModDescriptionTab?id=%d&game_id=%d"):format(webdomain, self.id, game.id)
+	local url = ("https://%s/%s/mods/%s"):format(webdomain, self.game, self.id)
 
 	if not util.exec('test -n "$(find %s -type f -mmin -%s 2>/dev/null)"', path, 23 * 60) then
 		util.action("Query", url)
-		assert(util.exec("wget --quiet --output-document=%s %s", path, url))
+		assert(util.exec("wget --no-verbose --output-document=%s %s", path, url))
 		assert(os.execute("sleep 0.1"))
 	end
 
