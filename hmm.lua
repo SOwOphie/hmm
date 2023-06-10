@@ -105,13 +105,16 @@ for _, m in ipairs(loadorder) do
 	util.step(m.name, m.url)
 	local d = m:installpath()
 
-	local hi <close> = io.popen(("find %s -type f -printf '%%P\\n' >> %s/hmm"):format(util.shellesc(d), util.shellesc(gamedir)))
+	local hi <close> = io.popen(("find %s -type f -printf '%%P\\n'"):format(util.shellesc(d)))
 	local files = {}
 	for l in hi:lines() do
-		if util.exec('test -n "$(find %s/%s -type f 2>/dev/null)"', gamedir, l) and not (m.collisions or {})[l] then
-			m:error("file %q collides, please allow explicitly to continue")
+		if util.exec('test -e %s/%s', gamedir, l) then
+			if not (m.collisions or {})[l] then
+				m:error("file %q collides, please allow explicitly to continue (add the file path to the `collisions` list of this mod)", l)
+			end
+		else
+			ho:write(l, "\n")
 		end
-		ho:write(l, "\n")
 	end
 
 	assert(util.exec("rsync --quiet --archive %s/ %s", d, gamedir))
