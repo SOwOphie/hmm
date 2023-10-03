@@ -61,17 +61,15 @@ for _, m in ipairs(mods) do addmod(m) end
 util.done()
 
 
-util.log "\nDependencies:"
+util.note "\nDependencies:"
 for _, m in ipairs(loadorder) do
 	local deps = m:getdeps()
-	if deps[1] then
-		util.log(" - %q (%s)", m.name, m.url)
-		for _, d in ipairs(deps) do util.log("     ==> %q (%s)", d.name, d.url) end
-	end
+	util.note(" - %q (%s)", m.name, m.url)
+	for _, d in ipairs(deps) do util.note("     ==> %q (%s)", d.name, d.url) end
 end
 
-util.log "\nLoad order:"
-for i, m in ipairs(loadorder) do util.log(" %4d  %q (%s)", i, m.name, m.url) end
+util.note "\nLoad order:"
+for i, m in ipairs(loadorder) do util.note(" %4d  %q (%s)", i, m.name, m.url) end
 
 
 
