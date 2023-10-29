@@ -126,6 +126,7 @@ function nexus.modmt.__index:userkeys()
 	ret.deps = true
 	ret.files = true
 	ret.ignoredeps = function(x) return type(x) == "table" and util.toset(x) or x end
+	ret.weak = true
 	return ret
 end
 

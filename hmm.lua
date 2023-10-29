@@ -51,12 +51,16 @@ local function addmod(m)
 	end
 
 	m:resolve()
+
 	util.trace_push(m)
 	for _, dep in ipairs(m:getdeps()) do addmod(dep) end
 	util.trace_pop()
+
 	table.insert(loadorder, m)
 end
-for _, m in ipairs(mods) do addmod(m) end
+for _, m in ipairs(mods) do
+	if not m.weak then addmod(m) end
+end
 
 util.done()
 
