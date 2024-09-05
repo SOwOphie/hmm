@@ -73,7 +73,10 @@ for _, m in ipairs(loadorder) do
 end
 
 util.note "\nLoad order:"
-for i, m in ipairs(loadorder) do util.note(" %4d  %q (%s)", i, m.name, m.url) end
+for i, m in ipairs(loadorder) do
+	util.note(" %4d  %q (%s)", i, m.name, m.url)
+	for _, f in ipairs(m:getfiles()) do util.note("         - %d: %s", f.id, f.descr) end
+end
 
 
 

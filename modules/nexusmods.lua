@@ -163,6 +163,7 @@ function nexus.modmt.__index:resolve()
 			if not primary then self:error("no primary file found, please specify file IDs manually") end
 
 			self.files = {primary}
+
 		else
 			local function newest(self, id)
 				for _, v in ipairs(self._files.file_updates) do
@@ -172,26 +173,37 @@ function nexus.modmt.__index:resolve()
 				end
 			end
 
-			for _, f in ipairs(self.files) do
+			local bad = {
+				[4] = "outdated",
+				[6] = "deleted",
+				[7] = "archived",
+			}
+
+			for i, f in ipairs(self.files) do
+				local match
 				for _, v in ipairs(self._files.files) do
-					if f == v.file_id then
-						if v.category_id == 4 then
-							local new = newest(self, f)
-							self:warn("file %d is outdated%s", f, new and (", try " .. new) or "")
-						end
-
-						if v.category_id == 6 then
-							local new = newest(self, f)
-							self:warn("file %d is deleted" , f, new and (", try " .. new) or "")
-						end
-
-						if v.category_id == 7 then
-							local new = newest(self, f)
-							self:warn("file %d is archived" , f, new and (", try " .. new) or "")
+					if type(f) == "number" and f == v.file_id then
+						match = v
+						break
+					elseif type(f) == "string" and v.name:find(f) then
+						if match and not bad[match.category_id] and not bad[v.category_id] then
+							self:error("Pattern %q does not uniquely identify a file, it matches at least %q, %q", f, match.name, v.name)
+						elseif not match or not bad[v.category_id] then
+							match = v
 						end
 					end
 				end
+
+				if not match then self:error("file not found: %s", f) end
+
+				if bad[match.category_id] then
+					local new = newest(self, match.file_id)
+					self:warn("file %s is %s%s", f, bad[match.category_id], new and (", try " .. new) or "")
+				end
+
+				if type(f) == "string" then self.files[i] = match.file_id end
 			end
+
 		end
 
 		self._resolved = true
@@ -208,6 +220,7 @@ function nexus.modmt.__index:getfiles()
 				f = {}
 				f.id       = ("%d"):format(fileid)
 				f.filename = f.id .. "." .. ext
+				f.descr    = v.name
 				f.url      = function()
 					if nexus.ispremium() then
 						return nexus.api(self.apipath .. "/download/" .. f.id .. ".json", 1,
